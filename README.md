@@ -7,20 +7,24 @@ STORES THE TREE AT MOMENT ONLY AS HARDWOOD TREE (applies HwTreeSegment) <br />
 
 The QSM file contains information of one cylinder per line. The position of the line in the file defines the number of the cylinder, for example, fifth line from the top specifies the information of cylinder #5.
 Each line contains the following 14 (tab separated) items:
-1. radius (meter)
-2. length (meter)
-3. x-coordinate of cylinders starting point
-4. y-coordinate of cylinders starting point
-5. z-coordinate of cylinders starting point
-6. x-coordinate of direction vector
-7. y-coordinate of direction vector
-8. z-coordinate of direction vector
+1. radius (m)
+2. length (m)
+3. start_point_x
+4. start_point_y
+5. start_point_z
+6. axis_direction_x
+7. axis_direction_y
+8. axis_direction_z
 9. Number of parent cylinder
 10. Number of next cylinder (= 0, if no next cylinder)
 11. Index of the branch the cylinder belongs to
 12. Order of the branch (0 = stem, 1 = branch forking off from stem, etc.)
 13. Number of the cylinder in the branch
 14. If the cylinder has been added to fill a gap, (not based on point cloud), 1 = true
+14. mad
+15. SurfCov
+16. added
+17. UnmodRadius (m)
 
 Usage: ./maketree file [-straighten] [-mm] [-addNeedles]  [-CR value ] <br />
 -straighten	  Stem generated from point cloud may wobble, this option sets stem go up straight.<br />

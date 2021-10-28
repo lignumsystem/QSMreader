@@ -14,6 +14,7 @@
 #include <string>
 #include <algorithm>
 #include<iterator>
+
 // 5.2.2016
 // HUOM: nyt on Pasin tiedostaossa ainakin testimielessa kaksi saraketta lisaa:
 // sylinterin muokkaamaton lapimitta ja tieto onko neulasia (0/1)
@@ -29,16 +30,16 @@
 using namespace cxxadt;
 using namespace std;
 
-void process_line(string& line, vector<string>& items)/*, vector<string>& n_items)*/ {
+void process_line(string& line, vector<string>& items, vector<string>& n_items) {
   istringstream l(line);
-  //  string dummy;
+  string dummy;
   for(int i = 0; i < 14; i++) {
     l >> items[i];
   }
-  // l >> dummy;   //Original radius
-  // for(int i = 0; i < 4; i++) {
-  //   l >> n_items[i];
-  // }
+  l >> dummy;   //Original radius
+  for(int i = 0; i < 3; i++) {
+    l >> n_items[i];
+  }
 }
 
 int main(int argc, char** argv)
@@ -87,17 +88,17 @@ int main(int argc, char** argv)
   // // 2. Pasin 2. saanto (30%)
   // // 3. Pekan 1. saanto
   // // 4. Pekan 2. saanto
-  // vector<string>  needle_items(4);
+  vector<string>  needle_items(4);
   // pair<string,vector<string> > needle_info;
   // list<pair<string, vector<string> > > needle_information;       //needles or not, first string = number of segment
 
   //  //Read in input file
 
-  // getline(input_file,line);                 //header
+ getline(input_file,line);                 //header
 
   getline(input_file,line);       //first segment to start
   lineNumber++;
-  process_line(line, items)/*, needle_items)*/;
+  process_line(line, items, needle_items);
   string lineNumberStr = static_cast<ostringstream*>( &(ostringstream() << lineNumber) )->str();
   items[14] =  lineNumberStr;
   root_links.push_back(items);
@@ -115,7 +116,7 @@ int main(int argc, char** argv)
       last = true;
       // break;
     }
-    process_line(line, items)/*, needle_items)*/;
+    process_line(line, items, needle_items);
     lineNumber++;
     string lineNumberStr = static_cast<ostringstream*>( &(ostringstream() << lineNumber) )->str();
     items[14] =  lineNumberStr;

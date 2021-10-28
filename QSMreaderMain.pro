@@ -13,6 +13,6 @@ LIBS += -L../c++adt/lib -L../stl-lignum/lib -L../Firmament/lib -L../LEngine/lib 
      
 macx:LIBS +=  -L../Graphics -lVisual -F/usr/local/Trolltech/Qt-4.1.4/lib -framework GLUT -framework OpenGL
 win32:CONFIG += console
-HEADERS += include/MakeFAPTM-Tree.h ../DigitalTree/include/DigitalTree.h ../DigitalTree/include/DGFunctors.h ../DigitalTree/include/CfDigitalTreeFoliage.h
+HEADERS += include/QSMreader.h
 
 SOURCES += make_lignumtree.cc
