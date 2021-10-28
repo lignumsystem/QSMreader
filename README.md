@@ -1,6 +1,8 @@
 #QSM to Lignum
 
-QSMreader Reads the QSM file <file>, tansforms it to Lignum tree and stores as a Lignum xml file. <br />
+This project must reside under lignum-core, that is, in the directory lignum-core/
+
+QSMreader reads a QSM file, tansforms it to Lignum tree and stores as a Lignum xml file. <br />
 STORES THE TREE AT MOMENT ONLY AS HARDWOOD TREE (applies HwTreeSegment) <br />
 
 The QSM file contains information of one cylinder per line. The position of the line in the file defines the number of the cylinder, for example, fifth line from the top specifies the information of cylinder #5.
