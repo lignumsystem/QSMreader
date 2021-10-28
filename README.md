@@ -20,7 +20,6 @@ Each line contains the following 14 (tab separated) items:
 11. Index of the branch the cylinder belongs to
 12. Order of the branch (0 = stem, 1 = branch forking off from stem, etc.)
 13. Number of the cylinder in the branch
-14. If the cylinder has been added to fill a gap, (not based on point cloud), 1 = true
 14. mad
 15. SurfCov
 16. added
