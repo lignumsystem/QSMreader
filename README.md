@@ -1,4 +1,4 @@
-#QSM to Lignum
+# QSM to Lignum
 
 This project must reside under lignum-core, that is, in the directory lignum-core/
 
