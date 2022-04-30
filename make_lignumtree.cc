@@ -20,14 +20,9 @@ using namespace std;
 
 void process_line(string& line, vector<string>& items) {
   istringstream l(line);
-  //  string dummy;
-  for(int i = 0; i < 17; i++) {
+  for(int i = 0; i < 14; i++) {
     l >> items[i];
   }
-  // l >> dummy;   //Original radius
-  // for(int i = 0; i < 3; i++) {
-  //   l >> n_items[i];
-  // }
 }
 
 int main(int argc, char** argv)
@@ -39,6 +34,27 @@ int main(int argc, char** argv)
     cout << "-conifer     Stores the tree as a conifer, default is hardwood" << endl; 
     cout << "-straighten  Stem generated from point cloud may wobble, this option sets stem go up straight."<<endl;
     cout << endl;
+    cout << "Each line of the input file contains the information about one QSM cylinder. There must be 14" << endl;
+    cout << "items in a line. If there are more (in some cases additional information items have been" << endl;
+    cout << "stored) they are ignored. The necessary 14 items are:" << endl;
+    cout << " 1. radius (m)" << endl;
+    cout << " 2. length (m)" << endl;
+    cout << " 3. start_point_x" << endl;
+    cout << " 4. start_point_y" << endl;
+    cout << " 5. start_point_z" << endl;
+    cout << " 6. axis_direction_x" << endl;
+    cout << " 7. axis_direction_y" << endl;
+    cout << " 8. axis_direction_z" << endl;
+    cout << " 9. Number of parent cylinder" << endl;
+    cout << " 10. Number of next cylinder (= 0, if no next cylinder)" << endl;
+    cout << " 11. Index of the branch the cylinder belongs to" << endl;
+    cout << " 12. Order of the branch (0 = stem, 1 = branch forking off from stem, etc.)" << endl;
+    cout << " 13. Number of the cylinder in the branch" << endl;
+    cout << " 14. If added to cover a volume void of points" << endl;
+    cout << endl;
+    cout << "In addition to these 14 values the number of the line of cylinder items denotes the number" << endl;
+    cout << "of the particular cylinder." << endl;
+    cout << endl;
     exit(0);
   }
 
@@ -47,7 +63,7 @@ int main(int argc, char** argv)
 
   //read in data file of cylinderinformation
 
-// There are 17 values on a line. They are
+// 14 values are read from a line. They are
 // 1. radius (m)
 // 2. length (m)
 // 3. start_point_x
@@ -61,10 +77,7 @@ int main(int argc, char** argv)
 // 11. Index of the branch the cylinder belongs to
 // 12. Order of the branch (0 = stem, 1 = branch forking off from stem, etc.)
 // 13. Number of the cylinder in the branch
-// 14. mad =  mean absolute distance (m)
-// 15. SurfCov = surface coverage (%)
-// 16. added = is cylinder added to fil a gap (1 = true)
-// 17. UnmodRadius = unmodified radius (m)
+// 14. If added to cover a volume void of points
  
    cout<<"Name of file: "<<argv[1]<<endl;
   ifstream input_file(argv[1]);
@@ -77,7 +90,7 @@ int main(int argc, char** argv)
 
   //  //root link = cylinder in QSM file
 
-  vector<string> items(17);               //This is for items on one line
+  vector<string> items(15);               //This is for items on one line
   list<vector<string> > root_links;       //This contains all information of the input file
 
   //  //Read in input file
@@ -87,7 +100,7 @@ int main(int argc, char** argv)
   getline(input_file,line);       //first segment to start
   lineNumber++;
   process_line(line, items)/*, needle_items)*/;
-  string lineNumberStr = static_cast<ostringstream*>( &(ostringstream() << lineNumber) )->str();
+  string lineNumberStr = std::to_string(lineNumber);
   items[14] =  lineNumberStr;
   root_links.push_back(items);
 
@@ -99,9 +112,9 @@ int main(int argc, char** argv)
       last = true;
       // break;
     }
-    process_line(line, items)/*, needle_items)*/;
+    process_line(line, items);
     lineNumber++;
-    string lineNumberStr = static_cast<ostringstream*>( &(ostringstream() << lineNumber) )->str();
+    string lineNumberStr = std::to_string(lineNumber);
     items[14] =  lineNumberStr;
     root_links.push_back(items);
   }  //end of reading input file
