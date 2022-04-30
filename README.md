@@ -6,7 +6,7 @@ QSMreader reads a QSM file, produced by TreeQSM program (https://github.com/Inve
 transforms it to Lignum tree and stores as a Lignum xml file. <br />
 
 The QSM file contains information of one cylinder per line. The position of the line in the file defines the number of the cylinder, for example, fifth line from the top specifies the information of cylinder #5.
-Each line contains the following 14 items:
+Each line must contain the following 14 items:
 1. radius (m)
 2. length (m)
 3. start_point_x
@@ -21,6 +21,8 @@ Each line contains the following 14 items:
 12. Order of the branch (0 = stem, 1 = branch forking off from stem, etc.)
 13. Number of the cylinder in the branch
 14. added = is cylinder added to fill a gap (1 = true)
+
+If there are more than 14 items the rest are ignored.
 
 Usage: ./maketree file [-conifer] [-straighten] <br />
 -conifer     Stores the tree as a conifer, default is hardwood <br />
