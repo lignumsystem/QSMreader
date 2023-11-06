@@ -18,10 +18,18 @@
 using namespace cxxadt;
 using namespace std;
 
+
+bool is_csv = false;
+
 void process_line(string& line, vector<string>& items) {
   istringstream l(line);
+
   for(int i = 0; i < 14; i++) {
-    l >> items[i];
+    if(is_csv) {
+      std::getline(l,items[i], ',');
+    } else {
+      l >> items[i];
+    }
   }
 }
 
@@ -29,13 +37,15 @@ int main(int argc, char** argv)
 {
 
   if(argc < 2){
-    cout << "Reads the QSM file <file>, transforms it to Lignum tree and stores as Lignum xml file." << endl << endl;
-    cout << "Usage: ./maketree <file> [-conifer] [-straighten]" << endl;
+    cout << "Reads the QSM file <file>, transforms it to Lignum tree and stores as a Lignum xml file" << endl;
+    cout << "with name *.xml where * stands for:  possible extension dropped off." << endl << endl;
+    cout << "Usage: ./maketree <file> [-conifer] [-straighten] [-csv]" << endl;
     cout << "-conifer     Stores the tree as a conifer, default is hardwood" << endl; 
     cout << "-straighten  Stem generated from point cloud may wobble, this option sets stem go up straight."<<endl;
+    cout << "-csv         Default of the QSM file is Space-delimited Text, this reads Comma-separated Values." << endl;
     cout << endl;
-    cout << "Each line of the input file contains the information about one QSM cylinder. There must be 14" << endl;
-    cout << "items in a line. If there are more (in some cases additional information items have been" << endl;
+    cout << "Each line of the input file contains the information about one QSM cylinder. Program assumes there are" << endl;
+    cout << "at least 14 items in a line. If there are more (in some cases additional information items have been" << endl;
     cout << "stored) they are ignored. The necessary 14 items are:" << endl;
     cout << " 1. radius (m)" << endl;
     cout << " 2. length (m)" << endl;
@@ -52,7 +62,7 @@ int main(int argc, char** argv)
     cout << " 13. Number of the cylinder in the branch" << endl;
     cout << " 14. If added to cover a volume void of points" << endl;
     cout << endl;
-    cout << "In addition to these 14 values the number of the line of cylinder items denotes the number" << endl;
+    cout << "In addition to these 14 values, the number of the line of cylinder items denotes the number" << endl;
     cout << "of the particular cylinder." << endl;
     cout << endl;
     exit(0);
@@ -61,6 +71,12 @@ int main(int argc, char** argv)
   string line;
   int lineNumber = 0;
 
+
+  is_csv = false;
+  if(CheckCommandLine(argc,argv,"-csv")) {
+    is_csv = true;
+  }
+  
   //read in data file of cylinderinformation
 
 // 14 values are read from a line. They are
@@ -79,13 +95,12 @@ int main(int argc, char** argv)
 // 13. Number of the cylinder in the branch
 // 14. If added to cover a volume void of points
  
-   cout<<"Name of file: "<<argv[1]<<endl;
   ifstream input_file(argv[1]);
-
-
   if (!input_file) {
-    cout << "Did not find input file cyl_data_branch.dat" << endl;
+    cout << "Did not find input file " << argv[1] << endl;
     exit(1);
+  } else {
+    cout << "Input file:  " << argv[1] << endl;
   }
 
   //  //root link = cylinder in QSM file
@@ -95,9 +110,10 @@ int main(int argc, char** argv)
 
   //  //Read in input file
 
- getline(input_file,line);                 //header
+  getline(input_file,line);                 //header
 
   getline(input_file,line);       //first segment to start
+ 
   lineNumber++;
   process_line(line, items)/*, needle_items)*/;
   string lineNumberStr = std::to_string(lineNumber);
@@ -119,7 +135,7 @@ int main(int argc, char** argv)
     root_links.push_back(items);
   }  //end of reading input file
 
-  
+
   //  //Make tree
 
   bool is_hw = true;
@@ -214,14 +230,24 @@ int main(int argc, char** argv)
 
     //Write xml file
 
-    std::string outputFile = argv[1];
-    std::size_t found = outputFile.find(".txt");
 
-    if(found != string::npos) { // found .txt
-      outputFile.replace(found, std::string(".txt").length(), ".xml");
-    } else { //just append .xml
-      outputFile.append(".xml");
-    }
+
+  std::string outputFile = argv[1];
+  string f_txt;
+  if(is_csv) {
+    f_txt = ".csv";
+  } else {
+    f_txt = ".txt";
+  }
+  std::size_t found = outputFile.find(f_txt);
+
+  if(found != string::npos) { // found .txt
+    outputFile.replace(found, f_txt.length(), ".xml");
+  } else { //just append .xml
+    outputFile.append(".xml");
+  }
+
+  cout << "Name of the xml file: " << outputFile << endl;
 
     if(is_hw) {
       XMLDomTreeWriter<HwQSMSegment,HwQSMBud> writer;
