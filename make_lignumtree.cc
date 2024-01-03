@@ -39,7 +39,7 @@ int main(int argc, char** argv)
   if(argc < 2){
     cout << "Reads the QSM file <file>, transforms it to Lignum tree and stores as a Lignum xml file" << endl;
     cout << "with name *.xml where * stands for:  possible extension dropped off." << endl << endl;
-    cout << "Usage: ./maketree <file> [-conifer] [-straighten] [-csv]" << endl;
+    cout << "Usage: ./maketree <file> [-conifer] [-ellipse] [-straighten] [-csv] [-leafFile <file>]" << endl;
     cout << "-conifer     Stores the tree as a conifer, default is hardwood" << endl; 
     cout << "-straighten  Stem generated from point cloud may wobble, this option sets stem go up straight."<<endl;
     cout << "-csv         Default of the QSM file is Space-delimited Text, this reads Comma-separated Values." << endl;
@@ -63,10 +63,23 @@ int main(int argc, char** argv)
     cout << " 14. If added to cover a volume void of points" << endl;
     cout << endl;
     cout << "In addition to these 14 values, the number of the line of cylinder items denotes the number" << endl;
-    cout << "of the particular cylinder." << endl;
+    cout << "of the particular cylinder." << endl << endl;
+    cout << "-conifer     If the tree is conifer, deciduous tree is default" << endl;
+    cout << "-ellipse     Triangle is the default leaf of deciduous, this makes leaves ellipses." << endl;
+    cout << "-straighten  Makes the trunk (cylinders of order equal to 1) straight." << endl;
+    cout << "-csv         If the input text file is comma separated values, tab/space demilimited is default." << endl;
+    cout << "-leafFile <file>   Deciduous tree may have leaves given in a separate file" << endl;
+    cout << "                   Read it and then add a segment (lenghth = 0.1, diameter = 0)" << endl;
+    cout << "                   at top of the tree and attach all leaves to it. The leaf data is for" << endl;
+    cout << "                   kite shaped leaves (at least for time being), they can be stored as ellipses" << endl;
+    cout << "                   or triangles at the moment." << endl;
     cout << endl;
     exit(0);
   }
+
+  string leaf_file;
+  if(ParseCommandLine(argc,argv,"-leafFile", leaf_file) ) {
+
 
   string line;
   int lineNumber = 0;
@@ -120,6 +133,10 @@ int main(int argc, char** argv)
   items[14] =  lineNumberStr;
   root_links.push_back(items);
 
+
+  //This is the position of the tree (start of first cylinder), used later
+  Point p0(atof(items[2].c_str()), atof(items[3].c_str()), atof(items[4].c_str()));
+  cout << " p0 " << p0 << endl;
   bool last = false;
   while(input_file.good()){
     getline(input_file,line);
@@ -139,12 +156,19 @@ int main(int argc, char** argv)
   //  //Make tree
 
   bool is_hw = true;
+  bool is_hw_ellipse = false;
   if(CheckCommandLine(argc,argv,"-conifer")) {
-      is_hw = false;
+    is_hw = false;
+    is_hw_ellipse = false;
+  } else {
+    if(CheckCommandLine(argc,argv,"-ellipse") ) {
+      is_hw_ellipse = true;
     }
+  }
 
   Tree<HwQSMSegment,HwQSMBud> lignum_tree_hw(Point(0,0,0), PositionVector(0,0,1.0));
   Tree<CfQSMSegment,CfQSMBud> lignum_tree_cf(Point(0,0,0), PositionVector(0,0,1.0));
+  Tree<HwQSMSegment_e,HwQSMBud_e> lignum_tree_hw_e(Point(0,0,0), PositionVector(0,0,1.0));
 
   //Add cylinders one by one
   //link_num = number of link starting with 0. If == 0, add_link adds first TreeSegment to the tree,
@@ -156,14 +180,19 @@ int main(int argc, char** argv)
     int father_num = atoi(((*rI)[8]).c_str());
     int order = atoi(((*rI)[11]).c_str());
     if(is_hw) {
-    add_link<HwQSMSegment,HwQSMBud>(lignum_tree_hw, link_num, father_num, order);
+      if(!is_hw_ellipse) {
+	add_link<HwQSMSegment,HwQSMBud>(lignum_tree_hw, link_num, father_num, order);
+      } else {
+	add_link<HwQSMSegment_e,HwQSMBud_e>(lignum_tree_hw_e, link_num, father_num, order);
+      }
     } else {
-    add_link<CfQSMSegment,CfQSMBud>(lignum_tree_cf, link_num, father_num, order);
+      add_link<CfQSMSegment,CfQSMBud>(lignum_tree_cf, link_num, father_num, order);
     }
   }
 
+
   //  //Then set the positions, directions, radii etc of cylinders
-  vector<vector<double> > struct_data;  //length, rad, angle by segment number
+  vector<vector<double> > struct_data;  //length, rad  by segment number
   vector< PositionVector> directionVector; // This stores the direction to a vector
   vector< Point> pointVector;              // positions from the file are read in to this vector.
   for(rI = root_links.begin(); rI != root_links.end(); rI++) {
@@ -181,29 +210,41 @@ int main(int argc, char** argv)
     pointVector.push_back(position);
   }
 
-    if(is_hw) {  
+  if(is_hw) {
+    if(!is_hw_ellipse) {
       SetArchitecture<HwQSMSegment,HwQSMBud> SA(struct_data,directionVector,pointVector);
       ForEach(lignum_tree_hw, SA);
-      Point p0(0.0,0.0,0.0);	  
-      PropagateUp(lignum_tree_hw, p0, ConnectTree<HwQSMSegment,HwQSMBud>());
+      PropagateUp(lignum_tree_hw, p0, ConnectTreeQSM<HwQSMSegment,HwQSMBud>());
       Axis<HwQSMSegment,HwQSMBud>& ax =  GetAxis(lignum_tree_hw);
       TreeCompartment<HwQSMSegment,HwQSMBud>* tc = GetFirstTreeCompartment(ax);
       PositionVector Dir = GetDirection(*tc);
-      PropagateUp(lignum_tree_hw, Dir, ConnectTreeDir<HwQSMSegment,HwQSMBud>());
+      PropagateUp(lignum_tree_hw, Dir, PropagateDirToBPBud<HwQSMSegment,HwQSMBud>());
       int iniGo = 0;
       PropagateUp(lignum_tree_hw,iniGo,SetGraveliusOrder<HwQSMSegment,HwQSMBud>());
+      SetPoint(lignum_tree_hw,p0);
     } else {
-      SetArchitecture<CfQSMSegment,CfQSMBud> SA(struct_data,directionVector,pointVector);
-      ForEach(lignum_tree_cf, SA);
-      Point p0(0.0,0.0,0.0);	  
-      PropagateUp(lignum_tree_cf, p0, ConnectTree<CfQSMSegment,CfQSMBud>());
-      Axis<CfQSMSegment,CfQSMBud>& ax =  GetAxis(lignum_tree_cf);
-      TreeCompartment<CfQSMSegment,CfQSMBud>* tc = GetFirstTreeCompartment(ax);
+      SetArchitecture<HwQSMSegment_e,HwQSMBud_e> SA(struct_data,directionVector,pointVector);
+      ForEach(lignum_tree_hw_e, SA);
+      PropagateUp(lignum_tree_hw_e, p0, ConnectTreeQSM<HwQSMSegment_e,HwQSMBud_e>());
+      Axis<HwQSMSegment_e,HwQSMBud_e>& ax =  GetAxis(lignum_tree_hw_e);
+      TreeCompartment<HwQSMSegment_e,HwQSMBud_e>* tc = GetFirstTreeCompartment(ax);
       PositionVector Dir = GetDirection(*tc);
-      PropagateUp(lignum_tree_cf, Dir, ConnectTreeDir<CfQSMSegment,CfQSMBud>());
+      PropagateUp(lignum_tree_hw_e, Dir, PropagateDirToBPBud<HwQSMSegment_e,HwQSMBud_e>());
       int iniGo = 0;
-      PropagateUp(lignum_tree_cf,iniGo,SetGraveliusOrder<CfQSMSegment,CfQSMBud>());
+      PropagateUp(lignum_tree_hw_e,iniGo,SetGraveliusOrder<HwQSMSegment_e,HwQSMBud_e>());
+      SetPoint(lignum_tree_hw_e,p0);
     }
+  } else {
+    SetArchitecture<CfQSMSegment,CfQSMBud> SA(struct_data,directionVector,pointVector);
+    ForEach(lignum_tree_cf, SA);
+    PropagateUp(lignum_tree_cf, p0, ConnectTreeQSM<CfQSMSegment,CfQSMBud>());
+    Axis<CfQSMSegment,CfQSMBud>& ax =  GetAxis(lignum_tree_cf);
+    TreeCompartment<CfQSMSegment,CfQSMBud>* tc = GetFirstTreeCompartment(ax);
+    PositionVector Dir = GetDirection(*tc);
+    PropagateUp(lignum_tree_cf, Dir, PropagateDirToBPBud<CfQSMSegment,CfQSMBud>());
+    int iniGo = 0;
+    PropagateUp(lignum_tree_cf,iniGo,SetGraveliusOrder<CfQSMSegment,CfQSMBud>());
+  }
 
   if(CheckCommandLine(argc,argv,"-straighten")) {
     //The stem wobbles. It is straightend here
@@ -213,25 +254,261 @@ int main(int argc, char** argv)
     //the compartment below.
     //This solves also the problem of branches hanging in the air.
     if(is_hw) {
-    StraightenStem<HwQSMSegment,HwQSMBud>(lignum_tree_hw); 
-    Axis<HwQSMSegment,HwQSMBud>& ax =  GetAxis(lignum_tree_hw);
-    TreeCompartment<HwQSMSegment,HwQSMBud>* tc = GetFirstTreeCompartment(ax);
-    Point p0 = GetPoint(*tc);
-    PropagateUp(lignum_tree_hw, p0, ConnectTree<HwQSMSegment,HwQSMBud>());
+      StraightenStem<HwQSMSegment,HwQSMBud>(lignum_tree_hw); 
+      Axis<HwQSMSegment,HwQSMBud>& ax =  GetAxis(lignum_tree_hw);
+      TreeCompartment<HwQSMSegment,HwQSMBud>* tc = GetFirstTreeCompartment(ax);
+      Point p0 = GetPoint(*tc);
+      PropagateUp(lignum_tree_hw, p0, ConnectTree<HwQSMSegment,HwQSMBud>());
     } else {
-    StraightenStem<CfQSMSegment,CfQSMBud>(lignum_tree_cf); 
-    Axis<CfQSMSegment,CfQSMBud>& ax =  GetAxis(lignum_tree_cf);
-    TreeCompartment<CfQSMSegment,CfQSMBud>* tc = GetFirstTreeCompartment(ax);
-    Point p0 = GetPoint(*tc);
-    PropagateUp(lignum_tree_cf, p0, ConnectTree<CfQSMSegment,CfQSMBud>());
+      StraightenStem<CfQSMSegment,CfQSMBud>(lignum_tree_cf); 
+      Axis<CfQSMSegment,CfQSMBud>& ax =  GetAxis(lignum_tree_cf);
+      TreeCompartment<CfQSMSegment,CfQSMBud>* tc = GetFirstTreeCompartment(ax);
+      Point p0 = GetPoint(*tc);
+      PropagateUp(lignum_tree_cf, p0, ConnectTree<CfQSMSegment,CfQSMBud>());
     }
   }
 
 
-    //Write xml file
+
+  //Deciduous tree may have leaves given in a separate file
+  //Read it and then add a segment (lenghth = 0.1, diameter = 0)
+  //at top of the tree and attach all leaves to it.
+  //The leaves are kite shaped (at least for time being), they
+  //are stored as ellipses having the same length and width, a, and b
+  //as the leaf. The degree of filling (LGAdof) is equal 2/pi
+
+  string leaf_file;
+  if(ParseCommandLine(argc,argv,"-leafFile", leaf_file) ) {
+    ifstream input_file;
+    input_file.open(leaf_file);
+
+    if (!input_file.is_open()) {
+      cout << "Did not find input file " << leaf_file << endl;
+      exit(1);
+    } else {
+      cout << "Leaf file:  " << leaf_file << endl;
+    }
+  
+    list<vector<Point> > leaf_vertices; 
+
+    string line;
+    getline(input_file,line);   //header
+    
+    while (getline(input_file,line))
+      {
+	istringstream iss(line);
+	string lineStream;
+	string::size_type sz;
+
+	vector <double> row;
+
+	while (getline(iss, lineStream, ','))
+	  {  
+	    row.push_back(stod(lineStream,&sz)); // convert to double
+	  }
+
+	vector<Point> vertices;
+	int col = 1;
+	for(int i = 0; i < 4; i++) {
+	  Point v;
+	  v.setX(row[col]); v.setY(row[col+1]); v.setZ(row[col+2]);
+	  vertices.push_back(v);
+	  col += 3;
+	}
+	leaf_vertices.push_back(vertices);
+      }
+       
+    cout << "Data of " << leaf_vertices.size() << " leaves read in." << endl;
+    
+     
+    if(!is_hw_ellipse) {      //Triangle leaf
+      Axis<HwQSMSegment,HwQSMBud>& stem_axis =  GetAxis(lignum_tree_hw);
+      Bud<HwQSMSegment,HwQSMBud>* last_b = GetTerminatingBud(stem_axis);
+
+      BranchingPoint<HwQSMSegment,HwQSMBud> *new_bp =
+	new BranchingPoint<HwQSMSegment,HwQSMBud>(&lignum_tree_hw);
+      HwQSMSegment* new_seg =
+	new HwQSMSegment(&lignum_tree_hw);    
+
+      InsertTreeCompartmentSecondLast(stem_axis, new_seg); 
+      InsertTreeCompartmentSecondLast(stem_axis, new_bp); 
+    
+      Point pos = GetPoint(*last_b);
+      SetPoint(*new_seg, pos);
+      SetValue(*new_seg, LGAomega, 1.0);
+      SetValue(*new_seg, LGAL, 0.1);
+      SetValue(*new_seg, LGAR, 0.00001);
+      pos = pos + Point(0.0,0.0,0.1);   //End of the leaf TreSsegment
+      SetPoint(*new_bp, pos);
+      SetValue(*new_bp, LGAomega, 1.0);
+      SetPoint(*last_b, pos);
+
+      //Leaves to the addional TreeSegment new_seg
+      //NOTE that Ellipse is the Shape of the leaf in HwQSMSegment by default.
+
+    
+      typename list<vector<Point> >::iterator I;
+      for(I=leaf_vertices.begin(); I != leaf_vertices.end(); I++) {
+	//It is assumed that the vertices are in the vector vertices in the
+	//order base, left corner, apex, right corner
+	Point l_pos =(*I)[0];
+	Point leaf_axis = (*I)[2] - l_pos;
+	Petiole* leaf_pet = new Petiole(l_pos, l_pos + 0.01*leaf_axis);   //Petiole length 1% of leaf length
+
+	//For the time being the shape of the leaf is ellipse that is the default
+	//for HwTreeSegment. The ellipse is "drawn" around the four vertices of
+	//the leaves (kite-shaped) in the data. It is assumed that all four vertices
+	//are in the same plane (no check for it). The degree of filling (LGAdof)
+	//shows the proportion of true leaf area to the area of the ellipse and is
+	//equal to 2/pi.
+
+
+	Triangle* leaf_shape = new Triangle((*I)[1],(*I)[3],(*I)[2]);   //leftcorner, rightcorner, apexcorner --
+	//This is only for compilation for time being
+
+	// cout << leaf_axis.getLength()/2.0 << endl;
+	// exit(0);
+
+	//   const Point&  getCenterPoint() const { return center;};
+	// const PositionVector& getNormal()const { return normal;};
+	// double getSemimajorAxis()const{ return semimajoraxis;};
+	// Point  getSemimajorAxisPoint()const;
+	// double getSemiminorAxis()const{return semiminoraxis;};
+	// Point  getSemiminorAxisPoint()const;
+
+
+	// Petiole(const Point& begin, const Point& end);
+
+	// Ellipse(const Point& petiole_end,
+	// 	      const PositionVector& petiole_dir,
+	// 	      const PositionVector& leaf_normal,
+	// 	      const double& semimajoraxis,  const double& semiminoraxis);
+	//BroadLeaf(const SHAPE& shape, const Petiole& petiole);
+
+	BroadLeaf<Triangle>* new_leaf = new BroadLeaf<Triangle>(*leaf_shape, *leaf_pet);	
+	new_seg->addLeaf(new_leaf);
+
+	SetValue<Triangle>(*new_leaf, LGAsf, 28.0);             //This value is a guess
+	SetValue<Triangle>(*new_leaf, LGAdof, 1.0);
+
+
+	// // // S& GetShape(const BroadLeaf<S>& bl);
+
+	// Ellipse koe = GetShape(new_leaf);
+	// cout << "Normal " << koe.getNormal() << endl;
+	// exit(0);	
+      }
+	
+    } else {   //Ellipse leaf
+      Axis<HwQSMSegment_e,HwQSMBud_e>& stem_axis =  GetAxis(lignum_tree_hw_e);
+      Bud<HwQSMSegment_e,HwQSMBud_e>* last_b = GetTerminatingBud(stem_axis);
+
+      BranchingPoint<HwQSMSegment_e,HwQSMBud_e> *new_bp =
+	new BranchingPoint<HwQSMSegment_e,HwQSMBud_e>(&lignum_tree_hw_e);
+      HwQSMSegment_e* new_seg =
+	new HwQSMSegment_e(&lignum_tree_hw_e);    
+
+      InsertTreeCompartmentSecondLast<HwQSMSegment_e,HwQSMBud_e>(stem_axis, new_seg); 
+      InsertTreeCompartmentSecondLast<HwQSMSegment_e,HwQSMBud_e>(stem_axis, new_bp); 
+    
+      Point pos = GetPoint(*last_b);
+      SetPoint(*new_seg, pos);
+      SetValue(*new_seg, LGAomega, 1.0);
+      SetValue(*new_seg, LGAL, 0.1);
+      SetValue(*new_seg, LGAR, 0.00001);
+      pos = pos + Point(0.0,0.0,0.1);   //End of the leaf TreSsegment
+      SetPoint(*new_bp, pos);
+      SetValue(*new_bp, LGAomega, 1.0);
+      SetPoint(*last_b, pos);
+
+      //Leaves to the addional TreeSegment new_seg
+      //NOTE that Ellipse is the Shape of the leaf in HwQSMSegment by default.
+
+      int counter = 0;
+      typename list<vector<Point> >::iterator I;
+      for(I=leaf_vertices.begin(); I != leaf_vertices.end(); I++) {
+	//It is assumed that the vertices are in the vector vertices in the
+	//order base, left corner, apex, right corner
+	Point l_pos =(*I)[0];
+	Point leaf_axis = (*I)[2] - l_pos;
+	Point leaf_diag = (*I)[3] - (*I)[1];
+	Petiole* leaf_pet = new Petiole(l_pos, l_pos + 0.01*leaf_axis);   //Petiole length 1% of leaf length
+
+	//For the time being the shape of the leaf is ellipse that is the default
+	//for HwTreeSegment. The ellipse is "drawn" around the four vertices of
+	//the leaves (kite-shaped) in the data. It is assumed that all four vertices
+	//are in the same plane (no check for it). The degree of filling (LGAdof)
+	//shows the proportion of true leaf area to the area of the ellipse and is
+	//equal to 2/pi.
+
+	//leaf normal
+	PositionVector l_normal = Cross(PositionVector(leaf_axis),
+					PositionVector(leaf_diag));
+	l_normal.normalize();
+	double norm_z = l_normal.getZ();
+	if(norm_z < 0.0) l_normal = (-1.0)*l_normal;  //Normal points up
+	PositionVector pet_dir = PositionVector(leaf_axis);
+	pet_dir.normalize();
+	Ellipse* leaf_shape = new Ellipse(l_pos + 0.01*leaf_axis, pet_dir ,
+			   l_normal,leaf_axis.getLength()/2.0,leaf_diag.getLength()/2.0);
+
+	// cout << leaf_axis.getLength()/2.0 << endl;
+	// exit(0);
+
+	//   const Point&  getCenterPoint() const { return center;};
+	// const PositionVector& getNormal()const { return normal;};
+	// double getSemimajorAxis()const{ return semimajoraxis;};
+	// Point  getSemimajorAxisPoint()const;
+	// double getSemiminorAxis()const{return semiminoraxis;};
+	// Point  getSemiminorAxisPoint()const;
+
+
+	// Petiole(const Point& begin, const Point& end);
+
+	// Ellipse(const Point& petiole_end,
+	// 	      const PositionVector& petiole_dir,
+	// 	      const PositionVector& leaf_normal,
+	// 	      const double& semimajoraxis,  const double& semiminoraxis);
+	//BroadLeaf(const SHAPE& shape, const Petiole& petiole);
+
+	BroadLeaf<Ellipse>* new_leaf = new BroadLeaf<Ellipse>(*leaf_shape, *leaf_pet);
+	new_seg->addLeaf(new_leaf);
+	SetValue(*new_leaf, LGAdof, 2.0/PI_VALUE);
+	SetValue(*new_leaf, LGAsf, 28.0);             //This value is a guess
+
+	counter++;
+	if(counter > 10) {break;}
+
+      }
+    }  //else  is_hw_ellipse == true i.e. leaf = Ellipse
+     
+  } //if(-leafFile ...
 
 
 
+  // Axis<HwQSMSegment,HwQSMBud>& stem_axis =  GetAxis(lignum_tree_hw);
+  // HwQSMSegment* llast = static_cast<HwQSMSegment*>(GetLastTreeSegment(stem_axis));
+  // list<BroadLeaf<Ellipse>*>& ll = GetLeafList(*llast);
+  // cout << GetPoint(*llast) << endl;
+  // cout << ll.size() << endl;
+ 
+  // //  typename list<BroadLeaf<Ellipse>*>::iterator Il;
+  // //  for(Il=ll.begin(); Il != ll.end(); Il++) {
+
+  // BroadLeaf<Ellipse>* fi = ll.back();
+  // 	Ellipse koe = GetShape(*fi);
+  // 	cout << "semimajor " << koe.getSemimajorAxis() << endl;
+  // 	cout << "LGAsf " << GetValue(*fi, LGAsf) << endl;
+  // 		cout << "Normal " << koe.getNormal() << endl;
+
+  // 	exit(0);
+
+  // 	// }
+
+
+
+  
+  //Write xml file
   std::string outputFile = argv[1];
   string f_txt;
   if(is_csv) {
@@ -249,19 +526,28 @@ int main(int argc, char** argv)
 
   cout << "Name of the xml file: " << outputFile << endl;
 
-    if(is_hw) {
-      XMLDomTreeWriter<HwQSMSegment,HwQSMBud> writer;
+  if(is_hw) {
+    if(!is_hw_ellipse) {
+      XMLDomTreeWriter<HwQSMSegment,HwQSMBud,Triangle> writer;
       writer.writeTreeToXML(lignum_tree_hw, outputFile);
       cout << outputFile << " Dbh: " << 100*GetValue(lignum_tree_hw,LGADbh) << " Dbase: "
 	   << 100*GetValue(lignum_tree_hw,LGADbase) << " H: " << GetValue(lignum_tree_hw,LGAH) << endl;
     } else {
-      XMLDomTreeWriter<CfQSMSegment,CfQSMBud> writer;
-      writer.writeTreeToXML(lignum_tree_cf, outputFile);
-      cout << outputFile << " Dbh: " << 100*GetValue(lignum_tree_cf,LGADbh) << " Dbase: "
-	   << 100*GetValue(lignum_tree_cf,LGADbase) << " H: " << GetValue(lignum_tree_cf,LGAH) << endl;
+      XMLDomTreeWriter<HwQSMSegment_e,HwQSMBud_e,Ellipse> writer;
+      writer.writeTreeToXML(lignum_tree_hw_e, outputFile);
+      cout << outputFile << " Dbh: " << 100*GetValue(lignum_tree_hw_e,LGADbh) << " Dbase: "
+	   << 100*GetValue(lignum_tree_hw_e,LGADbase) << " H: " << GetValue(lignum_tree_hw_e,LGAH) << endl;
     }
+  } else {
+    XMLDomTreeWriter<CfQSMSegment,CfQSMBud> writer;
+    writer.writeTreeToXML(lignum_tree_cf, outputFile);
+    cout << outputFile << " Dbh: " << 100*GetValue(lignum_tree_cf,LGADbh) << " Dbase: "
+	 << 100*GetValue(lignum_tree_cf,LGADbase) << " H: " << GetValue(lignum_tree_cf,LGAH) << endl;
+  }
 
   exit(0);
+  }
+
 }
 
 

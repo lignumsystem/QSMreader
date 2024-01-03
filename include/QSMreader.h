@@ -11,11 +11,11 @@ using namespace cxxadt;
 using namespace std;
 
 class HwQSMBud;
-class HwQSMSegment : public HwTreeSegment<HwQSMSegment,HwQSMBud>
+class HwQSMSegment : public HwTreeSegment<HwQSMSegment,HwQSMBud,Triangle>
 {
 public:
-    HwQSMSegment(Tree<HwQSMSegment,HwQSMBud>* t)
-        :HwTreeSegment<HwQSMSegment,HwQSMBud>(t){}
+  HwQSMSegment(Tree<HwQSMSegment,HwQSMBud>* t)
+    :HwTreeSegment<HwQSMSegment,HwQSMBud,Triangle>(t){}
 
     int getNumber() {return number;}
     void setNumber(const int& nu) {number = nu;}
@@ -46,6 +46,25 @@ private:
 class CfQSMBud : public Bud<CfQSMSegment,CfQSMBud>{
 public:
     CfQSMBud(Tree<CfQSMSegment,CfQSMBud>* t):Bud<CfQSMSegment,CfQSMBud>(t){}
+};
+
+class HwQSMBud_e;
+class HwQSMSegment_e : public HwTreeSegment<HwQSMSegment_e,HwQSMBud_e,Ellipse>
+{
+public:
+  HwQSMSegment_e(Tree<HwQSMSegment_e,HwQSMBud_e>* t)
+    :HwTreeSegment<HwQSMSegment_e,HwQSMBud_e,Ellipse>(t){}
+
+    int getNumber() {return number;}
+    void setNumber(const int& nu) {number = nu;}
+
+private:
+    int number;
+};
+
+class HwQSMBud_e : public Bud<HwQSMSegment_e,HwQSMBud_e>{
+public:
+    HwQSMBud_e(Tree<HwQSMSegment_e,HwQSMBud_e>* t):Bud<HwQSMSegment_e,HwQSMBud_e>(t){}
 };
 
 
@@ -153,9 +172,9 @@ public:
             SetValue(*frs,LGAR, rad);
             SetValue(*frs,LGAL, len);
 
-            SetPoint(*frs, Point(0,0,0));  //Point(0,0,0) is only for compilation, must be position
-            SetDirection(*frs, PositionVector(0,0,0));  //PositionVector(0,0,0) is only for compilation, must be
-            //direction
+            // SetPoint(*frs, Point(0,0,0));  //Point(0,0,0) is only for compilation, must be position
+            // SetDirection(*frs, PositionVector(0,0,0));  //PositionVector(0,0,0) is only for compilation, must be
+            // //direction
             SetDirection(*frs, DirVec);
             SetPoint(*frs, PosVec);
         }
@@ -179,25 +198,24 @@ private:
 };
 
 template <class TS, class BUD>
-class ConnectTreeDir{
-     public:
-    ConnectTreeDir(){}
-    PositionVector& operator()(PositionVector& direction, TreeCompartment<TS,BUD>* tc)const
-         {
-           if(BUD *bu = dynamic_cast<BUD*>(tc)) {
-             SetDirection(*bu,direction);
-             PositionVector direction = GetDirection(*bu);
-          }
-           else if(BranchingPoint<TS,BUD> *bp =
-                   dynamic_cast<BranchingPoint<TS,BUD>*>(tc))
-           {
-               SetDirection(*bp,direction);
-               PositionVector direction = GetDirection(*bp);
-           }
-           else{}
-           return direction;
-         }
-     };
+class PropagateDirToBPBud{
+public:
+  PropagateDirToBPBud(){}
+  PositionVector& operator()(PositionVector& direction, TreeCompartment<TS,BUD>* tc)const
+  {
+    if(BUD *bu = dynamic_cast<BUD*>(tc)) {
+      SetDirection(*bu,direction);
+    }
+    else if(BranchingPoint<TS,BUD> *bp =
+	    dynamic_cast<BranchingPoint<TS,BUD>*>(tc)) {
+      SetDirection(*bp,direction);
+    }
+    else if(TS* ts = dynamic_cast<TS*>(tc)) {
+      direction = GetDirection(*ts);
+    }
+    return direction;
+  }
+};
 
 //Adds order of compartments by one
 template <class TS, class BUD>
@@ -246,5 +264,32 @@ class IncrementOrderByOne {
       SetDirection(**a_i, direction);
     }
 
+ }
+
+//Sets coordinates so that the position of next BranchingPoint or
+// Bud = base of previous TreeSegment + length * direction
+// Coordinates of the TreeSegments are not changed
+//Run this with propagate up
+template <class TS, class BUD>
+class ConnectTreeQSM{
+public:
+  Point& 
+  operator()(Point& p, TreeCompartment<TS,BUD>* tc)const
+  {
+    if(TS* ts = dynamic_cast<TS*>(tc)) {
+      p = GetPoint(*ts);
+      LGMdouble l = GetValue(*ts, LGAL);
+      PositionVector direction = GetDirection(*ts);
+      Point end = p + Point(l*direction);
+      p = end;
+    }
+    else {
+      SetPoint(*tc, p);
+    }
+
+    return p;
   }
+};
+
+
 #endif
