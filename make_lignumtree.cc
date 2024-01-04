@@ -43,6 +43,12 @@ int main(int argc, char** argv)
     cout << "-conifer     Stores the tree as a conifer, default is hardwood" << endl; 
     cout << "-straighten  Stem generated from point cloud may wobble, this option sets stem go up straight."<<endl;
     cout << "-csv         Default of the QSM file is Space-delimited Text, this reads Comma-separated Values." << endl;
+    cout << "-ellipse     Triangle is the default leaf of deciduous, this makes leaves ellipses." << endl;
+    cout << "-leafFile <file>   Deciduous tree may have leaves given in a separate file" << endl;
+    cout << "                   Read it and then add a segment (lenghth = 0.1, diameter = 0)" << endl;
+    cout << "                   at top of the tree and attach all leaves to it. The leaf data is for" << endl;
+    cout << "                   kite shaped leaves (at least for time being), they can be stored as ellipses" << endl;
+    cout << "                   or triangles at the moment." << endl;
     cout << endl;
     cout << "Each line of the input file contains the information about one QSM cylinder. Program assumes there are" << endl;
     cout << "at least 14 items in a line. If there are more (in some cases additional information items have been" << endl;
@@ -64,15 +70,6 @@ int main(int argc, char** argv)
     cout << endl;
     cout << "In addition to these 14 values, the number of the line of cylinder items denotes the number" << endl;
     cout << "of the particular cylinder." << endl << endl;
-    cout << "-conifer     If the tree is conifer, deciduous tree is default" << endl;
-    cout << "-ellipse     Triangle is the default leaf of deciduous, this makes leaves ellipses." << endl;
-    cout << "-straighten  Makes the trunk (cylinders of order equal to 1) straight." << endl;
-    cout << "-csv         If the input text file is comma separated values, tab/space demilimited is default." << endl;
-    cout << "-leafFile <file>   Deciduous tree may have leaves given in a separate file" << endl;
-    cout << "                   Read it and then add a segment (lenghth = 0.1, diameter = 0)" << endl;
-    cout << "                   at top of the tree and attach all leaves to it. The leaf data is for" << endl;
-    cout << "                   kite shaped leaves (at least for time being), they can be stored as ellipses" << endl;
-    cout << "                   or triangles at the moment." << endl;
     cout << endl;
     exit(0);
   }
