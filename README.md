@@ -193,7 +193,7 @@ To compile QSMreader (and lignum-core) type:
 
 To compile with optimization on (faster, no debug) type:
 
-    qmake  "CONFIG+=release" QSMreadery.pro
+    qmake  "CONFIG+=release" QSMreader.pro
     make
 
 To remove all compilation work type `make distclean`.
