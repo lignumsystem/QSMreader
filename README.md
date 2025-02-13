@@ -32,7 +32,7 @@ The program works in a simple way (it is based on a version that reads root info
 2. The cylinders are added one by one to Lignum tree: add_link(lignum_tree, link_num, father_num, order);
 3. Then tree architeture (= positions and orientations of cylinders) is set
 
-#COMPILATION
+# COMPILATION
 
 >[!IMPORTANT]
 >Qt4 seems to be ever more difficult to maintain in MacPorts. 
