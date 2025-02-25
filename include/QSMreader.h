@@ -5,6 +5,7 @@
 #include <PositionVector.h>
 #include<Point.h>
 #include<iterator>
+#include <Kite.h>
 
 
 using namespace cxxadt;
@@ -48,6 +49,7 @@ public:
     CfQSMBud(Tree<CfQSMSegment,CfQSMBud>* t):Bud<CfQSMSegment,CfQSMBud>(t){}
 };
 
+//          Ellipse leaves
 class HwQSMBud_e;
 class HwQSMSegment_e : public HwTreeSegment<HwQSMSegment_e,HwQSMBud_e,Ellipse>
 {
@@ -66,6 +68,30 @@ class HwQSMBud_e : public Bud<HwQSMSegment_e,HwQSMBud_e>{
 public:
     HwQSMBud_e(Tree<HwQSMSegment_e,HwQSMBud_e>* t):Bud<HwQSMSegment_e,HwQSMBud_e>(t){}
 };
+
+
+//        Kite leaves
+class HwQSMBud_k;
+class HwQSMSegment_k : public HwTreeSegment<HwQSMSegment_k,HwQSMBud_k,Kite>
+{
+public:
+  HwQSMSegment_k(Tree<HwQSMSegment_k,HwQSMBud_k>* t)
+    :HwTreeSegment<HwQSMSegment_k,HwQSMBud_k,Kite>(t){}
+
+    int getNumber() {return number;}
+    void setNumber(const int& nu) {number = nu;}
+
+private:
+    int number;
+};
+
+class HwQSMBud_k : public Bud<HwQSMSegment_k,HwQSMBud_k>{
+public:
+    HwQSMBud_k(Tree<HwQSMSegment_k,HwQSMBud_k>* t):Bud<HwQSMSegment_k,HwQSMBud_k>(t){}
+};
+
+
+
 
 
 template<class TS, class BUD>
