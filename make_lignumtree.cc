@@ -374,7 +374,7 @@ int main(int argc, char** argv)
 	//order base, left corner, apex, right corner
 	Point l_pos =(*I)[0];
 	Point leaf_axis = (*I)[2] - l_pos;
-	Petiole* leaf_pet = new Petiole(l_pos, l_pos + 0.01*leaf_axis);   //Petiole length 1% of leaf length
+	Petiole* leaf_pet = new Petiole(l_pos - 0.01*leaf_axis, l_pos);   //Petiole length 1% of leaf length
 
 	//For the time being the shape of the leaf is ellipse that is the default
 	//for HwTreeSegment. The ellipse is "drawn" around the four vertices of
@@ -449,7 +449,7 @@ int main(int argc, char** argv)
 	Point l_pos =(*I)[0];
 	Point leaf_axis = (*I)[2] - l_pos;
 	Point leaf_diag = (*I)[3] - (*I)[1];
-	Petiole* leaf_pet = new Petiole(l_pos, l_pos + 0.01*leaf_axis);   //Petiole length 1% of leaf length
+	Petiole* leaf_pet = new Petiole(l_pos - 0.01*leaf_axis, l_pos);   //Petiole length 1% of leaf length
 
 	//For the time being the shape of the leaf is ellipse that is the default
 	//for HwTreeSegment. The ellipse is "drawn" around the four vertices of
@@ -508,7 +508,7 @@ int main(int argc, char** argv)
 	Point leaf_axis = (*I)[2] - l_pos;
 	Point leaf_diag = (*I)[3] - (*I)[1];
 
-	Petiole* leaf_pet = new Petiole(l_pos, l_pos + 0.01*leaf_axis);   //Petiole length 1% of leaf length
+	Petiole* leaf_pet = new Petiole(l_pos - 0.01*leaf_axis, l_pos);   //Petiole length 1% of leaf length
 
 	//leaf normal
 	PositionVector l_normal = Cross(PositionVector(leaf_axis),
