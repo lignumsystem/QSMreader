@@ -77,6 +77,10 @@ class HwQSMSegment_k : public HwTreeSegment<HwQSMSegment_k,HwQSMBud_k,Kite>
 public:
   HwQSMSegment_k(Tree<HwQSMSegment_k,HwQSMBud_k>* t)
     :HwTreeSegment<HwQSMSegment_k,HwQSMBud_k,Kite>(t){}
+  HwQSMSegment_k(const Point& p,const PositionVector& pv,
+                const LGMdouble go, const METER l, const METER r,
+		 const METER rn,Tree<HwQSMSegment_k,HwQSMBud_k>* tree)
+    :HwTreeSegment(p,pv,go, l, r, rn, tree) {}
 
     int getNumber() {return number;}
     void setNumber(const int& nu) {number = nu;}
@@ -88,6 +92,8 @@ private:
 class HwQSMBud_k : public Bud<HwQSMSegment_k,HwQSMBud_k>{
 public:
     HwQSMBud_k(Tree<HwQSMSegment_k,HwQSMBud_k>* t):Bud<HwQSMSegment_k,HwQSMBud_k>(t){}
+    HwQSMBud_k(const Point& p, const PositionVector& d, const LGMdouble omega,
+	       Tree<HwQSMSegment_k,HwQSMBud_k>* tree): Bud<HwQSMSegment_k,HwQSMBud_k>(p, d, omega, tree){} 
 };
 
 
